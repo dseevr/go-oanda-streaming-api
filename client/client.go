@@ -1,6 +1,12 @@
 package client
 
-import "fmt"
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+)
 
 const (
 	baseUrl = "https://stream-fxtrade.oanda.com/v3/accounts/%s/pricing/stream?instruments=%s"
@@ -51,6 +57,10 @@ type Tick struct {
 	Type        string  `json:"type"`
 }
 
+func (t *Tick) IsHeartbeat() bool {
+	return "HEARTBEAT" == t.Type
+}
+
 type Quote struct {
 	Liquidity int64  `json:"liquidity"`
 	Price     string `json:"price"`
@@ -71,10 +81,47 @@ func New(account, token, currencies string) *Client {
 }
 
 func (c *Client) url() string {
-	return fmt.Sprintf(baseUrl, account, currencies)
+	return fmt.Sprintf(baseUrl, c.account, c.currencies)
 }
 
 func (c *Client) Run(f func(*Tick)) {
-	// TODO: connect to streaming server using token
-	// TODO: stream ticks
+	req, err := http.NewRequest("GET", c.url(), nil)
+	if err != nil {
+		log.Fatalln("http.NewRequest:", err)
+		return
+	}
+
+	// set our bearer token
+	req.Header.Set("Authorization", "Bearer "+c.token)
+
+	// just use the DefaultClient, no need to be fancy here
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatalln("http.Get:", err)
+		return
+	}
+
+	tick := &Tick{}
+
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			// technically, we should never get io.EOF here
+			log.Fatalln("reader.ReadBytes:", err)
+			return
+		}
+
+		if err := json.Unmarshal(line, tick); err != nil {
+			log.Fatalln("json.Unmarshal:", err)
+			return
+		}
+
+		// skip the heartbeat which is sent every 5 seconds
+		if tick.IsHeartbeat() {
+			continue
+		}
+
+		f(tick)
+	}
 }
