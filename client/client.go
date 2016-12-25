@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -55,15 +58,94 @@ type Tick struct {
 	Status      string  `json:"status"`
 	Time        string  `json:"time,omitempty"`
 	Type        string  `json:"type"`
+
+	// used to avoid parsing the Time multiple times
+	parsedTime time.Time
+}
+
+func (t *Tick) IsJapanese() bool {
+	return strings.Contains(t.Instrument, "JPY")
 }
 
 func (t *Tick) IsHeartbeat() bool {
 	return "HEARTBEAT" == t.Type
 }
 
+func (t *Tick) Symbol() string {
+	return strings.Replace(t.Instrument, "_", "", 1)
+}
+
+func (t *Tick) parseTime() time.Time {
+	if !t.parsedTime.IsZero() {
+		return t.parsedTime
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339Nano, t.Time)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	t.parsedTime = parsedTime
+
+	return t.parsedTime
+}
+
+func (t *Tick) UnixTimestamp() int64 {
+	return t.parseTime().Unix()
+}
+
+func (t *Tick) Nanoseconds() int64 {
+	return int64(t.parseTime().Nanosecond())
+}
+
+func (t *Tick) BestAsk() float64 {
+	if 0 == len(t.Asks) {
+		return 0.0
+	}
+
+	var best float64
+
+	// best ask is the lowest
+	for _, ask := range t.Asks {
+		val := ask.PriceAsFloat()
+		if val < best {
+			best = val
+		}
+	}
+
+	return best
+}
+
+func (t *Tick) BestBid() float64 {
+	if 0 == len(t.Bids) {
+		return 0.0
+	}
+
+	var best float64
+
+	// best bid is the highest
+	for _, bid := range t.Bids {
+		val := bid.PriceAsFloat()
+		if val > best {
+			best = val
+		}
+	}
+
+	return best
+}
+
 type Quote struct {
 	Liquidity int64  `json:"liquidity"`
 	Price     string `json:"price"`
+}
+
+func (q *Quote) PriceAsFloat() float64 {
+	val, err := strconv.ParseFloat(q.Price, 64)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return val
 }
 
 type Client struct {

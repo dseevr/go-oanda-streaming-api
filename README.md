@@ -4,6 +4,26 @@ This is a Go client library for Oanda's v20 streaming API.  Give it your account
 
 ## Usage
 
+```go
+c := client.New(accountID, authToken, currenciesToTrack)
+c.Run(func(t *client.Tick) {
+	// this function fires every time a tick is received
+})
+
+```
+
+For actual uses, see the `examples` directory.
+
+## Examples
+
+`printer.go` just prints the `client.Tick` object generated when each tick is received.
+
+`json_to_csv.go` converts the JSON tick format into a CSV of `unix_timestamp,nanoseconds,symbol,best_bid,best_ask` so you can import it into other programs/languages (R, Excel, etc.).  Example invocation:
+
+```sh
+go run examples/json_to_csv.go <tick_data.txt >output.csv
+```
+
 See main.go for an example.
 
 ## Setup
