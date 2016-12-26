@@ -24,7 +24,7 @@ For actual uses, see the `examples` directory.
 go run examples/json_to_csv.go <tick_data.txt >output.csv
 ```
 
-See main.go for an example.
+`stats.go` reads a JSON dump from the streaming API and outputs some stats about the pairs you were tracking (currently just displays them by tick count).
 
 ## Setup
 
