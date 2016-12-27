@@ -23,7 +23,7 @@ func main() {
 		}
 
 		// don't assume heartbeats were removed
-		if tick.IsHeartbeat() {
+		if !tick.IsTradeable() {
 			continue
 		}
 

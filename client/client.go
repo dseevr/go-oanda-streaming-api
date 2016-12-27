@@ -71,6 +71,10 @@ func (t *Tick) IsHeartbeat() bool {
 	return "HEARTBEAT" == t.Type
 }
 
+func (t *Tick) IsTradeable() bool {
+	return "tradeable" == t.Status
+}
+
 func (t *Tick) Symbol() string {
 	return strings.Replace(t.Instrument, "_", "", 1)
 }
@@ -199,11 +203,11 @@ func (c *Client) Run(f func(*Tick)) {
 			return
 		}
 
-		// skip the heartbeat which is sent every 5 seconds
-		if tick.IsHeartbeat() {
-			continue
+		// skip a few kinds of ticks here:
+		//   - the heartbeat which is sent every 5 seconds
+		//   - the "last prices" sent when initially connecting to the API
+		if tick.IsTradeable() {
+			f(tick)
 		}
-
-		f(tick)
 	}
 }
