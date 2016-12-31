@@ -16,15 +16,16 @@ For actual uses, see the `examples` directory.
 
 ## Examples
 
-`printer.go` just prints the `client.Tick` object generated when each tick is received.
+`printer/main.go` just prints the `client.Tick` object generated when each tick is received.
 
-`json_to_csv.go` converts the JSON tick format into a CSV of `unix_timestamp,nanoseconds,symbol,best_bid,best_ask` so you can import it into other programs/languages (R, Excel, etc.).  Example invocation:
+`json_to_csv/main.go` converts the JSON tick format into a CSV of `unix_timestamp,nanoseconds,symbol,best_bid,best_ask` so you can import it into other programs/languages (R, Excel, etc.).  Example invocation:
 
 ```sh
-go run examples/json_to_csv.go <tick_data.txt >output.csv
+go get github.com/dseevr/go-oanda-streaming-api/examples/json_to_csv
+json_to_csv <tick_data.txt >output.csv
 ```
 
-`stats.go` reads a JSON dump from the streaming API and outputs some stats about the pairs you were tracking (currently just displays them by tick count).
+`stats/main.go` reads a JSON dump from the streaming API and outputs some stats about the pairs you were tracking (currently just displays them by tick count).
 
 ## Setup
 
